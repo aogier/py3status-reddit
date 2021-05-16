@@ -1,0 +1,37 @@
+#!/bin/bash -e
+
+err_report() {
+    echo '### TEST FAILED'
+    echo "Error on line $1"
+}
+
+trap 'set +x; err_report $LINENO' ERR
+
+export PREFIX=""
+if [ -d 'venv' ] ; then
+    export PREFIX="venv/bin/"
+fi
+
+export VERSION_SCRIPT="import sys; print('%s.%s' % sys.version_info[0:2])"
+export PYTHON_VERSION=`python -c "$VERSION_SCRIPT"`
+
+set -x
+
+${PREFIX}autoflake --recursive --check $@
+
+${PREFIX}black --check $@
+
+${PREFIX}isort \
+    --multi-line=3 \
+    --trailing-comma \
+    --force-grid-wrap=0 \
+    --combine-as \
+    --line-width 88  \
+    --check \
+    $@
+
+${PREFIX}pylint \
+    --ignore __version__.py \
+    --fail-under 10 \
+    --disable=duplicate-code \
+    $@

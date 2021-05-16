@@ -1,0 +1,79 @@
+version: 2.1
+
+commands:
+  git-config:
+    steps:
+      - run:
+          name: setup git
+          command: |
+            git config --global user.email alessandro.ogier+bot@gmail.com;
+            git config --global user.name aogier
+
+jobs:
+  markdown-lint:
+    docker:
+      - image: mtlynch/markdownlint
+    steps:
+      - checkout
+      - run:
+          name: lint markdown files
+          command: mdl $(ls *md)
+
+  test:
+    docker:
+      - image: cimg/python:3.9.0
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - poetry-{{ checksum "poetry.lock" }}
+            - poetry-
+      - run:
+          name: install deps
+          command: poetry install
+      - save_cache:
+          key: poetry-{{ checksum "poetry.lock" }}
+          paths:
+            - ~/.cache/pypoetry
+      - run:
+          name: test
+          command: poetry run scripts/test src
+
+  bump-version:
+    docker:
+      - image: cimg/python:3.9.0
+    steps:
+      - checkout
+      - add_ssh_keys
+      - git-config
+      - run:
+          name: release version
+          command: |
+            pip3 install chachacha
+            chachacha release $(poetry version -s) || circleci-agent step halt
+            echo "VERSION = \"$(poetry version -s)\"" > src/py3status_reddit/__version__.py
+      - run:
+          name: commit
+          command: |
+            set -x
+            git add -u
+            git commit -m "releasing version $(poetry version -s)"
+            git tag v$(poetry version -s)
+            git tag -f latest
+            git log -n1 -p . | cat
+            git push origin master v$(poetry version -s)
+            git push -f origin latest
+
+workflows:
+  main:
+    jobs:
+#      - markdown-lint
+      - test
+      - bump-version:
+          requires:
+#            - markdown-lint
+            - test
+          filters:
+            branches:
+              only:
+                - master
