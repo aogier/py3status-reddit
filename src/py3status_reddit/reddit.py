@@ -136,7 +136,7 @@ class Py3status:
 
         elif self._count > 0:
             self.py3.command_run(  # pylint: disable=no-member
-                "xdg-open https://www.reddit.com/message/unread"
+                "xdg-open https://www.reddit.com/message/inbox"
             )
 
 

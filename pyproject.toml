@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py3status-reddit"
-version = "1.0.0"
+version = "1.0.1"
 description = "py3status module showing reddit unread messages"
 authors = ["Alessandro -oggei- Ogier <alessandro.ogier@gmail.com>"]
 readme = "README.md"
